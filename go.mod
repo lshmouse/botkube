@@ -13,6 +13,7 @@ require (
 	github.com/hashicorp/golang-lru v0.5.3 // indirect
 	github.com/imdario/mergo v0.3.7 // indirect
 	github.com/infracloudio/msbotbuilder-go v0.2.4
+	github.com/larksuite/oapi-sdk-go v1.1.40-rc9
 	github.com/lib/pq v1.2.0 // indirect
 	github.com/mattermost/gorp v2.0.0+incompatible // indirect
 	github.com/mattermost/mattermost-server v5.11.1+incompatible
@@ -23,7 +24,7 @@ require (
 	github.com/pelletier/go-toml v1.5.0 // indirect
 	github.com/prometheus/client_golang v1.7.1
 	github.com/sha1sum/aws_signing_client v0.0.0-20200229211254-f7815c59d5c1
-	github.com/sirupsen/logrus v1.6.0
+	github.com/sirupsen/logrus v1.7.0
 	github.com/stretchr/testify v1.7.0
 	go.uber.org/multierr v1.2.0 // indirect
 	golang.org/x/net v0.0.0-20211005001312-d4b1ae081e3b // indirect
@@ -32,7 +33,7 @@ require (
 	golang.org/x/term v0.0.0-20210503060354-a79de5458b56 // indirect
 	gopkg.in/asn1-ber.v1 v1.0.0-20181015200546-f715ec2f112d // indirect
 	gopkg.in/natefinch/lumberjack.v2 v2.0.0 // indirect
-	gopkg.in/yaml.v2 v2.2.8
+	gopkg.in/yaml.v2 v2.4.0
 	k8s.io/api v0.20.5
 	k8s.io/apimachinery v0.20.5
 	k8s.io/client-go v0.20.5
