@@ -20,7 +20,11 @@
 package bot
 
 import (
+	"errors"
 	"fmt"
+	"net/http"
+	"strings"
+
 	"github.com/infracloudio/botkube/pkg/config"
 	"github.com/infracloudio/botkube/pkg/execute"
 	"github.com/infracloudio/botkube/pkg/log"
@@ -29,8 +33,25 @@ import (
 	"github.com/larksuite/oapi-sdk-go/core/tools"
 	"github.com/larksuite/oapi-sdk-go/event"
 	eventhttpserver "github.com/larksuite/oapi-sdk-go/event/http/native"
-	"net/http"
-	"strings"
+)
+
+const (
+	//Event lark event
+	Event = "event"
+	//ChatType lark chat type
+	ChatType = "chat_type"
+	//Text lark chat message
+	Text = "text_without_at_bot"
+	//OpenChatID lark chat id
+	OpenChatID = "open_chat_id"
+	//ChatID lark chat id
+	ChatID = "chat_id"
+	//OpenID lark user id
+	OpenID = "open_id"
+	//Users lark users
+	Users = "users"
+	//UserID lark user id
+	UserID = "user_id"
 )
 
 // LarkBot listens for user's message, execute commands and sends back the response
@@ -61,22 +82,45 @@ func NewLarkBot(c *config.Config) Bot {
 	}
 }
 
-// Execute execute commands sent by users
+// Execute commands sent by users
 func (l *LarkBot) Execute(e map[string]interface{}) {
-	event := e["event"].(map[string]interface{})
+	event, ok := e[Event].(map[string]interface{})
+	if !ok {
+		log.Error("Missing expected event object in the request")
+		return
+	}
 
-	chatType := event["chat_type"].(string)
-	text := event["text_without_at_bot"].(string)
+	chatType, ok := event[ChatType].(string)
+	if !ok {
+		log.Error("Missing expected chatType object in the request")
+		return
+	}
+
+	text, ok := event[Text].(string)
+	if !ok {
+		log.Error("Missing expected text object in the request")
+		return
+	}
 
 	executor := execute.NewDefaultExecutor(text, l.AllowKubectl, l.RestrictAccess, l.DefaultNamespace,
 		l.ClusterName, config.LarkBot, "", true)
 	response := executor.Execute()
 
 	if chatType == "group" {
-		l.LarkClient.SendTextMessage("chat_id", event["open_chat_id"].(string), response)
-	} else {
-		l.LarkClient.SendTextMessage("open_id", event["open_id"].(string), response)
+		chatID, ok := event[OpenChatID].(string)
+		if !ok {
+			log.Error("Missing expected chatID object in the request")
+			return
+		}
+		l.LarkClient.SendTextMessage(ChatID, chatID, response)
+		return
 	}
+	openID, ok := event[OpenID].(string)
+	if !ok {
+		log.Error("Missing expected openID object in the request")
+		return
+	}
+	l.LarkClient.SendTextMessage(OpenID, openID, response)
 }
 
 // Start starts the lark server and listens for lark messages
@@ -122,16 +166,38 @@ func (l *LarkBot) Start() {
 
 // SayHello send welcome message to new added users
 func (l *LarkBot) SayHello(e map[string]interface{}) error {
-	event := e["event"].(map[string]interface{})
-	users := event["users"].([]interface{})
+	event, ok := e[Event].(map[string]interface{})
+	if !ok {
+		return larkError(Event)
+	}
+	users, ok := event[Users].([]interface{})
+	if !ok {
+		user := event[Users].(interface{})
+		users = append(users, user)
+	}
+
 	var messages []string
 	if users != nil {
 		for _, user := range users {
-			openID := user.(map[string]interface{})["open_id"].(string)
-			username := user.(map[string]interface{})["user_id"].(string)
+			openID, ok := user.(map[string]interface{})[OpenID].(string)
+			if !ok {
+				log.Error("Missing expected openID object in the request")
+			}
+			username := user.(map[string]interface{})[UserID].(string)
+			if !ok {
+				log.Error("Missing expected username object in the request")
+			}
 			messages = append(messages, fmt.Sprintf("<at user_id=\"%s\">%s</at>", openID, username))
 		}
 	}
 	messages = append(messages, "Hello from botkube~ Play with me by at botkube <commands>")
-	return l.LarkClient.SendTextMessage("chat_id", event["chat_id"].(string), strings.Join(messages, " "))
+	chatID, ok := event[ChatID].(string)
+	if !ok {
+		return larkError("chatID")
+	}
+	return l.LarkClient.SendTextMessage(ChatID, chatID, strings.Join(messages, " "))
+}
+
+func larkError(str string) error {
+	return errors.New("Missing expected " + str + " object in the request")
 }

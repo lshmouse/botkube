@@ -21,12 +21,15 @@ package notify
 
 import (
 	"fmt"
+
 	"github.com/infracloudio/botkube/pkg/config"
 	"github.com/infracloudio/botkube/pkg/events"
 	"github.com/infracloudio/botkube/pkg/log"
 	"github.com/infracloudio/botkube/pkg/utils"
 	"github.com/larksuite/oapi-sdk-go/core"
 )
+
+const ChatID = "chat_id"
 
 // Lark contains LarkClient for communication with lark and receiver group name to send notification to
 type Lark struct {
@@ -47,11 +50,11 @@ func NewLark(c config.CommunicationsConfig) Notifier {
 // SendEvent sends event notification to lark chart group
 func (l *Lark) SendEvent(event events.Event) error {
 	log.Debug(fmt.Sprintf(">> Sending to lark: %+v", event))
-	return l.LarkClient.SendTextMessage("chat_id", l.ReceiverGroup, FormatShortMessage(event))
+	return l.LarkClient.SendTextMessage(ChatID, l.ReceiverGroup, FormatShortMessage(event))
 }
 
 // SendMessage sends message to lark chart group
 func (l *Lark) SendMessage(msg string) error {
 	log.Debug(fmt.Sprintf(">> Sending to lark: %+v", msg))
-	return l.LarkClient.SendTextMessage("chat_id", l.ReceiverGroup, msg)
+	return l.LarkClient.SendTextMessage(ChatID, l.ReceiverGroup, msg)
 }
